@@ -10,11 +10,11 @@ resource "digitalocean_droplet" "lighthouse" {
   ]
 
   connection {
-    host = self.ipv4_address
-    user = "root"
-    type = "ssh"
+    host        = self.ipv4_address
+    user        = "root"
+    type        = "ssh"
     private_key = file(var.pvt_key)
-    timeout = "2m"
+    timeout     = "2m"
   }
 }
 
@@ -22,5 +22,5 @@ resource "digitalocean_floating_ip" "public-ip" {
   count = var.lighthouses-cnt
 
   droplet_id = digitalocean_droplet.lighthouse[count.index].id
-  region = "fra1"
+  region     = "fra1"
 }
