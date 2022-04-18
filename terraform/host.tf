@@ -8,6 +8,7 @@ resource "digitalocean_droplet" "host" {
   ssh_keys = [
     data.digitalocean_ssh_key.terraform.id
   ]
+  tags = ["host"]
 
   connection {
     host        = self.ipv4_address

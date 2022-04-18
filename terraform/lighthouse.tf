@@ -8,6 +8,7 @@ resource "digitalocean_droplet" "lighthouse" {
   ssh_keys = [
     data.digitalocean_ssh_key.terraform.id
   ]
+  tags = count.index == 0 ? ["lighthouse", "ca_authority"] : ["lighthouse"]
 
   connection {
     host        = self.ipv4_address
