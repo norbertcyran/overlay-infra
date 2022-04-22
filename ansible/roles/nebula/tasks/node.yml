@@ -1,0 +1,55 @@
+---
+- name: Ensure network certificate is present
+  delegate_to: "{{ groups['ca_authority'][0] }}"
+  run_once: true
+  command:
+    cmd: nebula-cert ca -name "Test network" -out-crt "/etc/nebula/ca.crt" -out-key "/etc/nebula/ca.key"
+    creates: /etc/nebula/ca.crt
+
+- name: Ensure a cert and key is present for host
+  command:
+    chdir: /etc/nebula
+    cmd: nebula-cert sign -name "{{ inventory_hostname }}" -ip "{{ nebula_ip }}/24"
+    creates: /etc/nebula/{{ inventory_hostname }}.crt
+  delegate_to: "{{ groups['ca_authority'][0] }}"
+
+- name: Read cert data for the host
+  slurp:
+    src: /etc/nebula/{{ item }}
+  register: cert_data
+  delegate_to: "{{ groups['ca_authority'][0] }}"
+  with_items:
+    - "{{ inventory_hostname }}.crt"
+    - "{{ inventory_hostname }}.key"
+    - ca.crt
+
+- name: Ensure certificates are present on the node
+  copy:
+    dest: /etc/nebula/{{ item.1 }}
+    content: "{{ item.0['content'] | b64decode }}"
+  loop: "{{ cert_data.results | zip(['host.crt', 'host.key', 'ca.crt']) | list }}"
+  loop_control:
+    label: "{{ item.0['item'] }}"
+
+- name: Ensure Nebula is configured
+  template:
+    src: config.yml.j2
+    dest: /etc/nebula/config.yml
+    owner: root
+    group: root
+    mode: '0400'
+
+- name: Ensure Nebula service exists
+  copy:
+    src: nebula.service
+    dest: /etc/systemd/system/nebula.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure nebula service is started
+  systemd:
+    name: nebula
+    daemon_reload: yes
+    enabled: yes
+    state: started

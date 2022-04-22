@@ -1,5 +1,6 @@
 ---
-- name: Ping all hosts
+- name: Set up overlay network
   hosts: all
   tasks:
-    - ping:
+    - include_role:
+        name: nebula

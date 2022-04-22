@@ -1,0 +1,64 @@
+pki:
+  ca: /etc/nebula/ca.crt
+  cert: /etc/nebula/host.crt
+  key: /etc/nebula/host.key
+
+# Port Nebula will be listening on
+listen:
+  host: 0.0.0.0
+  port: 4242
+
+preferred_ranges: ["192.168.100.0/24"]
+
+static_host_map:
+# lighthouse
+  {% for lighthouse in groups['lighthouse'] %}
+    "{{ hostvars[lighthouse]['nebula_ip'] }}": ["{{ hostvars[lighthouse]['ansible_host'] }}:4242"]
+  {% endfor %}
+
+lighthouse:
+  am_lighthouse: {{  'lighthouse' in group_names }}
+  interval: 60
+{% if 'host' in group_names %}
+  hosts:
+    {% for lighthouse in groups['lighthouse'] %}
+    - {{ hostvars[lighthouse]['nebula_ip'] }}
+    {% endfor %}
+{% endif %}
+
+# Configure the private interface
+tun:
+  dev: nebula1
+  # Sets MTU of the tun dev.
+  # MTU of the tun must be smaller than the MTU of the eth0 interface
+  mtu: 1300
+
+# Configure logging level
+logging:
+  level: info
+  format: json
+
+firewall:
+  conntrack:
+    tcp_timeout: 12m
+    udp_timeout: 3m
+    default_timeout: 10m
+    max_connections: 100000
+
+  inbound:
+    - proto: icmp
+      port: any
+      host: any
+    - proto: any
+      port: 22
+      host: any
+{% if "lighthouse" in groups %}
+    - proto: any
+      port: 53
+      host: any
+{% endif %}
+
+  outbound:
+    - proto: any
+      port: any
+      host: any

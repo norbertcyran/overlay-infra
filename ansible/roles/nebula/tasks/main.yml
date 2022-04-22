@@ -1,0 +1,7 @@
+---
+
+- name: Install Nebula
+  include_tasks: install.yml
+
+- name: Deploy nodes
+  include_tasks: node.yml

@@ -1,0 +1,28 @@
+---
+
+- name: Ensure nebula config directory is present
+  file:
+    path: /etc/nebula
+    state: directory
+
+- name: Check if nebula is installed
+  stat:
+    path: /usr/local/bin/nebula
+  register: nebula
+
+- name: Download and unpack nebula
+  unarchive:
+    src: https://github.com/slackhq/nebula/releases/download/v1.5.2/nebula-linux-amd64.tar.gz
+    dest: /usr/local/bin
+    remote_src: yes
+  when: not nebula.stat.exists
+
+- name: Ensure nebula permissions are correct
+  file:
+    path: "/usr/local/bin/{{ item }}"
+    owner: root
+    group: root
+    mode: "0700"
+  with_items:
+    - nebula
+    - nebula-cert
